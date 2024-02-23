@@ -1,8 +1,9 @@
-# This is a sample Python script.
-
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+# To run, use the following command. The input files should be in the same directory as the python file:
+# python Wells_Chris_Prob1.py <vertex record filename> <face record filename> <half edge record filename>
+# ex. python Wells_Chris_Prob1.py VertexRecord.csv FaceRecord.csv HalfEdgeRecord.csv
+# The output will go to std out
 import csv
+import sys
 
 
 class VertexRecordEntry:
@@ -76,7 +77,7 @@ def read_input_csv(input_file, entry_class):
 
     output_entries = []
 
-    with open(input_file, 'r') as f:
+    with open(input_file, 'r'):
 
         # read all the lines and get rid of the column names
         with open(input_file, newline='') as csvfile:
@@ -99,10 +100,10 @@ def read_input_csv(input_file, entry_class):
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
 
-    # Input filenames
-    vertex_filename = "VertexRecord.csv"
-    face_filename = "FaceRecord.csv"
-    hedge_filename = "HalfEdgeRecord.csv"
+    # The input parameters are the vertex, face, and half edge records in that order
+    vertex_filename = sys.argv[1]
+    face_filename = sys.argv[2]
+    hedge_filename = sys.argv[3]
 
     # Initialize the three DCEL records
     print("Reading " + vertex_filename + "...")
@@ -131,7 +132,8 @@ if __name__ == '__main__':
         if face.outer_component is None:
             outer_face = face
             break
-    print("Outer face is " + str(face))
+    if outer_face is not None:
+        print("Outer face is " + str(outer_face))
 
     # Next, go thru the half-edge cycles on each of the boundary face's inner components
     for half_edge in outer_face.inner_components:
