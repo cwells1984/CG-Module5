@@ -2,17 +2,14 @@
 
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+import csv
 
 
 class VertexRecordEntry:
-    def __init__(self, entry_string):
-        entry_string_split = entry_string.split(',')
-        self.id = entry_string_split[0]
-
-        coordinates = (entry_string_split[1].replace("\"(", ""), entry_string_split[2].replace(")\"", ""))
-        self.coordinates = (int(coordinates[0]), int(coordinates[1]))
-
-        self.incident_edge = entry_string_split[3]
+    def __init__(self, entry_list):
+        self.id = entry_list[0]
+        self.coordinates = tuple(int(num) for num in entry_list[1].replace('(', '').replace(')', '').split(','))
+        self.incident_edge = entry_list[2]
 
     def setup_pointers(self, hedge_records):
         for hedge_record in hedge_records:
@@ -22,27 +19,32 @@ class VertexRecordEntry:
 
 
 class FaceRecordEntry:
-    def __init__(self, entry_string):
-        entry_string_split = entry_string.split(',')
-        self.id = entry_string_split[0]
-        self.outer_component = entry_string_split[1]
+    def __init__(self, entry_list):
+        self.id = entry_list[0]
+        if entry_list[1] == "null":
+            self.inner_components = None
+        else:
+            self.inner_components = list(hedge_id for hedge_id in entry_list[1].split(","))
+        self.outer_component = entry_list[2]
 
     def setup_pointers(self, hedge_records):
         for hedge_record in hedge_records:
             if hedge_record.id == self.outer_component:
                 self.outer_component = hedge_record
-                break
+            if self.inner_components is not None:
+                for i in range(0, len(self.inner_components)):
+                    if hedge_record.id == self.inner_components[i]:
+                        self.inner_components[i] = hedge_record
 
 
 class HalfEdgeRecordEntry:
-    def __init__(self, entry_string):
-        entry_string_split = entry_string.split(',')
-        self.id = entry_string_split[0]
-        self.origin = entry_string_split[1]
-        self.twin = entry_string_split[2]
-        self.incident_face = entry_string_split[3]
-        self.next = entry_string_split[4]
-        self.previous = entry_string_split[5]
+    def __init__(self, entry_list):
+        self.id = entry_list[0]
+        self.origin = entry_list[1]
+        self.twin = entry_list[2]
+        self.incident_face = entry_list[3]
+        self.next = entry_list[4]
+        self.previous = entry_list[5]
 
     def setup_pointers(self, vertex_records, face_records, half_edge_records):
         for v_record in vertex_records:
@@ -71,17 +73,18 @@ def read_input_csv(input_file, entry_class):
     with open(input_file, 'r') as f:
 
         # read all the lines and get rid of the column names
-        input_lines = f.readlines()
-        input_lines = input_lines[1:]
+        with open(input_file, newline='') as csvfile:
+            csvreader = csv.reader(csvfile, delimiter=',', quotechar='"')
+            next(csvreader, None)
 
-        # add to vertex entry list
-        for input_line in input_lines:
-            if entry_class == VertexRecordEntry.__name__:
-                output_entries.append(VertexRecordEntry(input_line.strip()))
-            if entry_class == FaceRecordEntry.__name__:
-                output_entries.append(FaceRecordEntry(input_line.strip()))
-            if entry_class == HalfEdgeRecordEntry.__name__:
-                output_entries.append(HalfEdgeRecordEntry(input_line.strip()))
+            # now for each row
+            for row in csvreader:
+                if entry_class == VertexRecordEntry.__name__:
+                    output_entries.append(VertexRecordEntry(row))
+                if entry_class == FaceRecordEntry.__name__:
+                    output_entries.append(FaceRecordEntry(row))
+                if entry_class == HalfEdgeRecordEntry.__name__:
+                    output_entries.append(HalfEdgeRecordEntry(row))
 
     # Pass back the list of input segments
     return output_entries
