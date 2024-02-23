@@ -25,7 +25,10 @@ class FaceRecordEntry:
             self.inner_components = None
         else:
             self.inner_components = list(hedge_id for hedge_id in entry_list[1].split(","))
-        self.outer_component = entry_list[2]
+        if entry_list[2] == "null":
+            self.outer_component = None
+        else:
+            self.outer_component = entry_list[2]
 
     def setup_pointers(self, hedge_records):
         for hedge_record in hedge_records:
@@ -35,6 +38,9 @@ class FaceRecordEntry:
                 for i in range(0, len(self.inner_components)):
                     if hedge_record.id == self.inner_components[i]:
                         self.inner_components[i] = hedge_record
+
+    def __str__(self):
+        return "Face " + self.id
 
 
 class HalfEdgeRecordEntry:
@@ -115,5 +121,31 @@ if __name__ == '__main__':
     for hedge in half_edge_record:
         hedge.setup_pointers(vertex_record, face_record, half_edge_record)
     print("Done setting up pointers")
+
+    # Now to solve the problem - initialize the boundary faces list to return
+    boundary_faces = set()
+
+    # First, find the unbounded outer face - its OuterComponents should be None
+    outer_face = None
+    for face in face_record:
+        if face.outer_component is None:
+            outer_face = face
+            break
+    print("Outer face is " + str(face))
+
+    # Next, go thru the half-edge cycles on each of the boundary face's inner components
+    for half_edge in outer_face.inner_components:
+        origin = half_edge
+        current = origin.next
+
+        # add the twin's incident face to the set of boundary faces
+        while current != origin:
+            boundary_faces.add(current.twin.incident_face)
+            current = current.next
+
+    # Now print the contents of the set
+    print("Boundary Faces Output:")
+    for boundary_face in list(boundary_faces):
+        print(str(boundary_face))
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
